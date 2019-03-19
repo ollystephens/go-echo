@@ -1,14 +1,16 @@
-FROM golang:1.6.0-alpine
+FROM golang:1.12 AS build
 
 # Expose HTTP port and set necessary environment variables
 EXPOSE 8000
 
 # copy source code into the $GOPATH and switch to that directory
-COPY . ${GOPATH}/src/github.com/shopkeep/go-echo
-WORKDIR ${GOPATH}/src/github.com/shopkeep/go-echo
+WORKDIR /go/src/app
+COPY main.go .
 
-# compile source code and copy into $PATH
-RUN go install
+# compile source code
+RUN go install -v .
 
-# the default command runs the service in the foreground
-CMD ["go-echo"]
+# build final image distroless for size
+FROM gcr.io/distroless/base
+COPY --from=build /go/bin/app /go-echo
+CMD ["/go-echo"]
